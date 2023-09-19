@@ -150,8 +150,20 @@ jobs:
       signArtifacts: true
       useArtifactCache: true
 
+  CustomJob-PrepareDeploy:
+    name: My Job
+    needs: [ Build ]
+    runs-on: [ ubuntu-latest ]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: This is my job
+        run: |
+          Write-Host "This is my job"
+
   Deploy:
-    needs: [ Initialization, Build ]
+    needs: [ Initialization, Build, CustomJob-PrepareDeploy ]
     if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.environmentCount > 0
     strategy: ${{ fromJson(needs.Initialization.outputs.environmentsMatrixJson) }}
     runs-on: ${{ fromJson(matrix.os) }}

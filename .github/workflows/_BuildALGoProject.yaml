@@ -130,6 +130,10 @@ jobs:
           buildMode: ${{ inputs.buildMode }}
           projectsDependenciesJson: ${{ inputs.projectDependenciesJson }}
 
+      - name: CustomStep Before Build (from repo)
+        run: |
+          Write-Host "Before build from repo"
+
       - name: Build
         uses: freddydk/AL-Go/Actions/RunPipeline@custom
         env:
@@ -143,6 +147,10 @@ jobs:
           buildMode: ${{ inputs.buildMode }}
           installAppsJson: ${{ steps.DownloadProjectDependencies.outputs.DownloadedApps }}
           installTestAppsJson: ${{ steps.DownloadProjectDependencies.outputs.DownloadedTestApps }}
+
+      - name: CustomStep After Build (from repo)
+        run: |
+          Write-Host "After build from repo"
 
       - name: Sign
         if: inputs.signArtifacts && env.doNotSignApps == 'False' && env.keyVaultCodesignCertificateName != ''
