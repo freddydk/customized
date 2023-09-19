@@ -93,6 +93,10 @@ jobs:
           project: ${{ inputs.project }}
           get: useCompilerFolder,keyVaultCodesignCertificateName,doNotSignApps,artifact
 
+      - name: CustomStep After Settings
+        run: |
+          Write-Host "CustomStep after settings"
+
       - name: Read secrets
         id: ReadSecrets
         if: github.event_name != 'pull_request'
@@ -130,6 +134,10 @@ jobs:
           buildMode: ${{ inputs.buildMode }}
           projectsDependenciesJson: ${{ inputs.projectDependenciesJson }}
 
+      - name: CustomStep Before Build
+        run: |
+          Write-Host "before build"
+
       - name: Build
         uses: freddydk/AL-Go/Actions/RunPipeline@custom
         env:
@@ -143,6 +151,10 @@ jobs:
           buildMode: ${{ inputs.buildMode }}
           installAppsJson: ${{ steps.DownloadProjectDependencies.outputs.DownloadedApps }}
           installTestAppsJson: ${{ steps.DownloadProjectDependencies.outputs.DownloadedTestApps }}
+
+      - name: CustomStep After Build
+        run: |
+          Write-Host "after build"
 
       - name: Sign
         if: inputs.signArtifacts && env.doNotSignApps == 'False' && env.keyVaultCodesignCertificateName != ''
