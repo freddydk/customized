@@ -1,4 +1,5 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@custom"
+  "templateUrl": "https://github.com/freddydk/AL-Go@custom",
+  "templateSha": "35eba0949ba0d63e2a04ef44f60b1159638879e5"
 }
