@@ -127,7 +127,7 @@ jobs:
           downloadLatest: true
 
   Build:
-    needs: [ Initialization ]
+    needs: [ Initialization, CustomJob-MyJob ]
     if: (!failure()) && (!cancelled()) && fromJson(needs.Initialization.outputs.buildOrderJson)[0].projectsCount > 0
     strategy:
       matrix:
@@ -149,18 +149,6 @@ jobs:
       publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
-
-  CustomJob-PrepareDeploy:
-    name: My Job
-    needs: [ Build ]
-    runs-on: [ ubuntu-latest ]
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - name: This is my job
-        run: |
-          Write-Host "This is my job"
 
   Deploy:
     needs: [ Initialization, Build, CustomJob-PrepareDeploy ]
@@ -267,3 +255,27 @@ jobs:
           shell: powershell
           eventId: "DO0091"
           telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+
+  CustomJob-MyJob:
+    name: My Job
+    needs: [ Initialization, CheckForUpdates ]
+    runs-on: [ ubuntu-latest ]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: My custom job
+        run: |
+          Write-Host "This is my job from the template"
+
+  CustomJob-PrepareDeploy:
+    name: My Job
+    needs: [ Build ]
+    runs-on: [ ubuntu-latest ]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: This is my job
+        run: |
+          Write-Host "This is my job"
