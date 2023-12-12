@@ -98,6 +98,10 @@ jobs:
           project: ${{ inputs.project }}
           get: useCompilerFolder,keyVaultCodesignCertificateName,doNotSignApps,doNotRunTests,artifact,generateDependencyArtifact
 
+      - name: CustomStep After Settings
+        run: |
+          Write-Host "CustomStep after settings"
+
       - name: Read secrets
         id: ReadSecrets
         if: github.event_name != 'pull_request'
@@ -134,6 +138,10 @@ jobs:
           projectsDependenciesJson: ${{ inputs.projectDependenciesJson }}
           baselineWorkflowRunId: ${{ inputs.baselineWorkflowRunId }}
 
+      - name: CustomStep Before Build
+        run: |
+          Write-Host "before build"
+
       - name: CustomStep Before Build (from repo)
         run: |
           Write-Host "Before build from repo"
@@ -155,6 +163,10 @@ jobs:
       - name: CustomStep After Build (from repo)
         run: |
           Write-Host "After build from repo"
+
+      - name: CustomStep After Build
+        run: |
+          Write-Host "after build"
 
       - name: Sign
         if: inputs.signArtifacts && env.doNotSignApps == 'False' && env.keyVaultCodesignCertificateName != ''
