@@ -204,6 +204,18 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v2
 
+  CustomJob-PrepareDeploy:
+    name: My Job
+    needs: [ Build ]
+    runs-on: [ ubuntu-latest ]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: This is my job
+        run: |
+          Write-Host "This is my job"
+
   Deploy:
     needs: [ Initialization, Build, CustomJob-PrepareDeploy ]
     if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.environmentCount > 0
@@ -311,15 +323,3 @@ jobs:
           shell: powershell
           eventId: "DO0091"
           telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
-
-  CustomJob-PrepareDeploy:
-    name: My Job
-    needs: [ Build ]
-    runs-on: [ ubuntu-latest ]
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - name: This is my job
-        run: |
-          Write-Host "This is my job"
