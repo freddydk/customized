@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       templateUrl:
-        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@custom)
+        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@customize)
         required: false
         default: ''
       downloadLatest:
@@ -12,7 +12,7 @@ on:
         type: boolean
         default: true
       directCommit:
-        description: Direct Commit
+        description: Direct Commit?
         type: boolean
         default: false
 
@@ -32,36 +32,30 @@ jobs:
     needs: [ ]
     runs-on: [ windows-latest ]
     steps:
-      - name: Input
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          Write-Host "Inputs:"
-          $eventPath = Get-Content -Encoding UTF8 -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-          $eventPath.inputs.psObject.Properties | Sort-Object { $_.Name } | ForEach-Object {
-            $property = $_.Name
-            $value = $eventPath.inputs."$property"
-            Write-Host "- $property = '$value'"
-          }
+      - name: Dump Workflow Information
+        uses: freddydk/AL-Go/Actions/DumpWorkflowInfo@customize
+        with:
+          shell: powershell
 
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@custom
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@customize
         with:
           shell: powershell
           eventId: "DO0098"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@custom
+        uses: freddydk/AL-Go/Actions/ReadSettings@customize
         with:
           shell: powershell
           get: templateUrl
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@custom
+        uses: freddydk/AL-Go/Actions/ReadSecrets@customize
         with:
           shell: powershell
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -89,7 +83,7 @@ jobs:
           $downloadLatest = $ENV:downloadLatest
           Write-Host $ENV:eventName
           if ($ENV:eventName -eq 'schedule') {
-            Write-Host "Running Update AL-Go System Files on a schedule. Setting DirectCommit amd DownloadLatest to true"
+            Write-Host "Running Update AL-Go System Files on a schedule. Setting DirectCommit and DownloadLatest to true"
             $directCommit = 'true'
             $downloadLatest = 'true'
           }
@@ -97,18 +91,18 @@ jobs:
           Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "downloadLatest=$downloadLatest"
 
       - name: Update AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@custom
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@customize
         with:
           shell: powershell
           token: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).ghTokenWorkflow }}
-          DownloadLatest: ${{ env.downloadLatest }}
-          Update: true
+          downloadLatest: ${{ env.downloadLatest }}
+          update: 'Y'
           templateUrl: ${{ env.templateUrl }}
           directCommit: ${{ env.directCommit }}
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@custom
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@customize
         with:
           shell: powershell
           eventId: "DO0098"
