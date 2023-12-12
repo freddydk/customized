@@ -36,6 +36,11 @@ on:
         description: Build mode used when building the artifacts
         required: true
         type: string
+      baselineWorkflowRunId:
+        description: ID of the baseline workflow run, from where to download the current project dependencies, in case they are not built in the current workflow run
+        required: false
+        default: '0'
+        type: string
       secrets:
         description: A comma-separated string with the names of the secrets, required for the workflow.
         required: false
@@ -87,26 +92,24 @@ jobs:
           lfs: true
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@custom
+        uses: freddydk/AL-Go/Actions/ReadSettings@customize
         with:
           shell: ${{ inputs.shell }}
           project: ${{ inputs.project }}
-          get: useCompilerFolder,keyVaultCodesignCertificateName,doNotSignApps,artifact
+          get: useCompilerFolder,keyVaultCodesignCertificateName,doNotSignApps,doNotRunTests,artifact,generateDependencyArtifact
 
       - name: Read secrets
         id: ReadSecrets
         if: github.event_name != 'pull_request'
-        uses: freddydk/AL-Go/Actions/ReadSecrets@custom
+        uses: freddydk/AL-Go/Actions/ReadSecrets@customize
         with:
           shell: ${{ inputs.shell }}
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: '${{ inputs.secrets }},appDependencyProbingPathsSecrets'
 
       - name: Determine ArtifactUrl
-        uses: freddydk/AL-Go/Actions/DetermineArtifactUrl@custom
+        uses: freddydk/AL-Go/Actions/DetermineArtifactUrl@customize
         id: determineArtifactUrl
-        env:
-          Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
         with:
           shell: ${{ inputs.shell }}
           parentTelemetryScopeJson: ${{ inputs.parentTelemetryScopeJson }}
@@ -121,7 +124,7 @@ jobs:
 
       - name: Download Project Dependencies
         id: DownloadProjectDependencies
-        uses: freddydk/AL-Go/Actions/DownloadProjectDependencies@custom
+        uses: freddydk/AL-Go/Actions/DownloadProjectDependencies@customize
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
         with:
@@ -129,13 +132,14 @@ jobs:
           project: ${{ inputs.project }}
           buildMode: ${{ inputs.buildMode }}
           projectsDependenciesJson: ${{ inputs.projectDependenciesJson }}
+          baselineWorkflowRunId: ${{ inputs.baselineWorkflowRunId }}
 
       - name: CustomStep Before Build (from repo)
         run: |
           Write-Host "Before build from repo"
 
       - name: Build
-        uses: freddydk/AL-Go/Actions/RunPipeline@custom
+        uses: freddydk/AL-Go/Actions/RunPipeline@customize
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
           BuildMode: ${{ inputs.buildMode }}
@@ -155,7 +159,7 @@ jobs:
       - name: Sign
         if: inputs.signArtifacts && env.doNotSignApps == 'False' && env.keyVaultCodesignCertificateName != ''
         id: sign
-        uses: freddydk/AL-Go/Actions/Sign@custom
+        uses: freddydk/AL-Go/Actions/Sign@customize
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           azureCredentialsJson: ${{ secrets.AZURE_CREDENTIALS }}
@@ -164,13 +168,12 @@ jobs:
 
       - name: Calculate Artifact names
         id: calculateArtifactsNames
-        uses: freddydk/AL-Go/Actions/CalculateArtifactNames@custom
+        uses: freddydk/AL-Go/Actions/CalculateArtifactNames@customize
         if: success() || failure()
         with:
           shell: ${{ inputs.shell }}
           project: ${{ inputs.project }}
           buildMode: ${{ inputs.buildMode }}
-          branchName: ${{ github.ref_name }}
           suffix: ${{ inputs.artifactsNameSuffix }}
 
       - name: Upload thisbuild artifacts - apps
@@ -179,6 +182,15 @@ jobs:
         with:
           name: ${{ steps.calculateArtifactsNames.outputs.ThisBuildAppsArtifactsName }}
           path: '${{ inputs.project }}/.buildartifacts/Apps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload thisbuild artifacts - dependencies
+        if: inputs.publishThisBuildArtifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.calculateArtifactsNames.outputs.ThisBuildDependenciesArtifactsName }}
+          path: '${{ inputs.project }}/.buildartifacts/Dependencies/'
           if-no-files-found: ignore
           retention-days: 1
 
@@ -201,7 +213,7 @@ jobs:
 
       - name: Publish artifacts - dependencies
         uses: actions/upload-artifact@v3
-        if: inputs.publishArtifacts
+        if: inputs.publishArtifacts && env.generateDependencyArtifact == 'True'
         with:
           name: ${{ steps.calculateArtifactsNames.outputs.DependenciesArtifactsName }}
           path: '${{ inputs.project }}/.buildartifacts/Dependencies/'
@@ -249,8 +261,8 @@ jobs:
 
       - name: Analyze Test Results
         id: analyzeTestResults
-        if: success() || failure()
-        uses: freddydk/AL-Go/Actions/AnalyzeTests@custom
+        if: (success() || failure()) && env.doNotRunTests == 'False'
+        uses: freddydk/AL-Go/Actions/AnalyzeTests@customize
         with:
           shell: ${{ inputs.shell }}
           parentTelemetryScopeJson: ${{ inputs.parentTelemetryScopeJson }}
@@ -258,7 +270,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        uses: freddydk/AL-Go/Actions/PipelineCleanup@custom
+        uses: freddydk/AL-Go/Actions/PipelineCleanup@customize
         with:
           shell: ${{ inputs.shell }}
           parentTelemetryScopeJson: ${{ inputs.parentTelemetryScopeJson }}

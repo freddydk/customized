@@ -38,35 +38,29 @@ jobs:
     needs: [ ]
     runs-on: [ windows-latest ]
     steps:
-      - name: Input
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          Write-Host "Inputs:"
-          $eventPath = Get-Content -Encoding UTF8 -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-          $eventPath.inputs.psObject.Properties | Sort-Object { $_.Name } | ForEach-Object {
-            $property = $_.Name
-            $value = $eventPath.inputs."$property"
-            Write-Host "- $property = '$value'"
-          }
+      - name: Dump Workflow Information
+        uses: freddydk/AL-Go/Actions/DumpWorkflowInfo@customize
+        with:
+          shell: powershell
 
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@custom
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@customize
         with:
           shell: powershell
           eventId: "DO0090"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@custom
+        uses: freddydk/AL-Go/Actions/ReadSettings@customize
         with:
           shell: powershell
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@custom
+        uses: freddydk/AL-Go/Actions/ReadSecrets@customize
         with:
           shell: powershell
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -74,7 +68,7 @@ jobs:
           useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
 
       - name: Add existing app
-        uses: freddydk/AL-Go/Actions/AddExistingApp@custom
+        uses: freddydk/AL-Go/Actions/AddExistingApp@customize
         with:
           shell: powershell
           token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
@@ -85,7 +79,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@custom
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@customize
         with:
           shell: powershell
           eventId: "DO0090"
