@@ -1,5 +1,9 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@customize",
-  "templateSha": "1fede69022fa63709714d14b604712ffca673fd8"
+  "templateUrl": "https://github.com/freddydk/MyIndirectPteTemplate@main",
+  "templateSha": "dd5faea6d8bb74fcc6c59a4bd8b402605415fc58",
+  "useCompilerFolder": true,
+  "gitHubRunner": "ubuntu-latest",
+  "runs-on": "ubuntu-latest",
+  "doNotPublishApps": true
 }
