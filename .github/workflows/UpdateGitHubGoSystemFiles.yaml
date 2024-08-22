@@ -17,7 +17,9 @@ on:
         default: false
 
 permissions:
+  actions: read
   contents: read
+  id-token: write
 
 defaults:
   run:
@@ -29,6 +31,7 @@ env:
 
 jobs:
   UpdateALGoSystemFiles:
+    name: 'Update AL-Go System Files'
     needs: [ ]
     runs-on: [ windows-latest ]
     steps:
@@ -38,14 +41,13 @@ jobs:
           shell: powershell
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Initialize the workflow
         id: init
         uses: freddydk/AL-Go/Actions/WorkflowInitialize@customize
         with:
           shell: powershell
-          eventId: "DO0098"
 
       - name: Read settings
         uses: freddydk/AL-Go/Actions/ReadSettings@customize
@@ -63,10 +65,10 @@ jobs:
 
       - name: Override templateUrl
         env:
-          templateUrl: ${{ github.event.inputs.templateUrl }}
+          newTemplateUrl: ${{ github.event.inputs.templateUrl }}
         run: |
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
-          $templateUrl = $ENV:templateUrl
+          $templateUrl = $ENV:newTemplateUrl
           if ($templateUrl) {
             Write-Host "Using Template Url: $templateUrl"
             Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "templateUrl=$templateUrl"
@@ -103,7 +105,9 @@ jobs:
       - name: Finalize the workflow
         if: always()
         uses: freddydk/AL-Go/Actions/WorkflowPostProcess@customize
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           shell: powershell
-          eventId: "DO0098"
           telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
+          currentJobContext: ${{ toJson(job) }}
